@@ -2,7 +2,7 @@ import fetch from 'isomorphic-fetch'
 import * as types from '../types/Flights'
 export const APIKEY = 'A0cvrUD3FvGNbSWJpxAdAkDPVsWBZm5w'
 
-export function requestFlights(airport, date, daysAtDestination) {
+function requestFlights(airport, date, daysAtDestination) {
 	return {
 		type: types.REQUEST_FLIGHTS,
 		airport,
@@ -11,7 +11,7 @@ export function requestFlights(airport, date, daysAtDestination) {
 	}
 }
 
-export function receiveFlights(airport, date, daysAtDestination, json) {
+function receiveFlights(airport, date, daysAtDestination, json) {
 	return {
 		type: types.RECEIVE_FLIGHTS,
 		airport,
@@ -21,7 +21,7 @@ export function receiveFlights(airport, date, daysAtDestination, json) {
 		receivedAt: Date.now()
 	}
 }
-
+		
 export function fetchFlights(data) {
 	return dispatch => {
 		const ENDPOINT = 'https://api.transavia.com/v1/flightoffers/'
@@ -30,7 +30,10 @@ export function fetchFlights(data) {
 		let periodStartDate = new Date(data.periodStartDate)
 		let periodEndDate = new Date(data.periodEndDate)
 		let daysAtDestination = data.daysAtDestination
-                let lastPossibleDay = new Date(periodEndDate).setDate(periodEndDate.getDate() - daysAtDestination);
+                let lastPossibleDay = new Date(periodEndDate).setDate(periodEndDate.getDate() - daysAtDestination)
+		let adults = data.adults
+		let children = data.children
+
 
 		for (var currentDay = periodStartDate; currentDay <= lastPossibleDay; currentDay.setDate(currentDay.getDate() + 1)) {
 			let month = currentDay.getMonth() + 1
@@ -44,7 +47,9 @@ export function fetchFlights(data) {
 			let request = new Request(ENDPOINT + `?
 				Origin=${airport}&
 				OriginDepartureDate=${date}&
-				DaysAtDestination=${daysAtDestination}`, {
+				DaysAtDestination=${daysAtDestination}&
+				Adults=${adults}&
+				Children=${children}`, {
 				headers: new Headers({
 					'apikey': APIKEY
 					})

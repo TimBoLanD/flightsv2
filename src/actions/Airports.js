@@ -2,13 +2,13 @@ import fetch from 'isomorphic-fetch'
 import * as types from '../types/Airports'
 export const APIKEY = 'A0cvrUD3FvGNbSWJpxAdAkDPVsWBZm5w'
 
-export function requestAirports() {
+function requestAirports() {
 	return {
 		type: types.REQUEST_AIRPORTS
 	}
 }
 
-export function receiveAirports(json) {
+function receiveAirports(json) {
 	return {
 		type: types.RECEIVE_AIRPORTS,
 		airports: json,

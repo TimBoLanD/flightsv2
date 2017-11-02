@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Field, reduxForm } from 'redux-form'
-import { Button, Form, Input, Message } from 'semantic-ui-react'
+import { Button, Form, Grid, Icon, Input, Message } from 'semantic-ui-react'
 import { fetchAirports } from '../actions/Airports'
 
 const DropdownField = props => (
@@ -52,11 +52,45 @@ class SearchForm extends Component {
 
 		return (
 			<Form onSubmit={handleSubmit}>
-				<Field name='airportField' component={DropdownField} label='Departure airport' placeholder='Choose your departure airport' options={airportsOptions} validate={[ required ]} />
-				<Field name='periodStartDate' component={InputField} type='date' label='Leave from' icon='calendar' validate={[ required ]} />
-				<Field name='periodEndDate' component={InputField} type='date' label='Back on' icon='calendar' validate={[ required ]} />
-				<Field name='daysAtDestination' component={InputField} type='number' label='Days at destination' validate={[ required ]} />
-				<Button type="submit">Search</Button>
+				<Grid stackable>
+					<Grid.Row>
+						<Grid.Column>
+							<Field name='airportField' component={DropdownField} label='Departure airport' placeholder='Choose your departure airport' options={airportsOptions} validate={[ required ]} />
+						</Grid.Column>
+					</Grid.Row>
+					<Grid.Row columns={2}>
+						<Grid.Column>
+							<Field name='periodStartDate' component={InputField} type='date' label='Leave from' icon='calendar' validate={[ required ]} />
+						</Grid.Column>
+						<Grid.Column>
+							<Field name='periodEndDate' component={InputField} type='date' label='Back on' icon='calendar' validate={[ required ]} />
+						</Grid.Column>
+					</Grid.Row>
+					<Grid.Row columns={2}>
+						<Grid.Column>
+							<Field name='flightDuration' component={InputField} type='number' label='Flightduration (hours)' validate={[ required ]} />
+						</Grid.Column>
+						<Grid.Column>
+							<Field name='daysAtDestination' component={InputField} type='number' label='Days at destination' validate={[ required ]} />
+						</Grid.Column>
+					</Grid.Row>
+					<Grid.Row columns={3}>
+						<Grid.Column>
+							<Field name='adults' component={InputField} type='number' label='Adults (>11 year)' validate={[ required ]} />
+						</Grid.Column>
+						<Grid.Column>
+							<Field name='children' component={InputField} type='number' label='Children (2 - 11 year)' validate={[ required ]} />
+						</Grid.Column>
+						<Grid.Column>
+							<Field name='babies' component={InputField} type='number' label='Babies (<2 year)' validate={[ required ]} />
+						</Grid.Column>
+					</Grid.Row>
+					<Grid.Row>
+						<Grid.Column textAlign='center'>
+							<Button positive type="submit"><Icon name='search'/> Search</Button>
+						</Grid.Column>
+					</Grid.Row>
+				</Grid>
 			</Form>
 		)
 	}

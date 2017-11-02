@@ -24,7 +24,7 @@ describe('actions', () => {
 		const expectedAction = {
 			type: types.RECEIVE_AIRPORTS,
 			airports: json,
-			receivedAt: Date.now()
+			receivedAt: expect.any(Number)
 		}
 
 		expect(receiveAirports(json)).toEqual(expectedAction)

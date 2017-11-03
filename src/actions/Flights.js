@@ -2,7 +2,7 @@ import fetch from 'isomorphic-fetch'
 import * as types from '../types/Flights'
 export const APIKEY = 'A0cvrUD3FvGNbSWJpxAdAkDPVsWBZm5w'
 
-function requestFlights(airport, date, daysAtDestination, adults, children) {
+export function requestFlights(airport, date, daysAtDestination, adults, children) {
 	return {
 		type: types.REQUEST_FLIGHTS,
 		airport,
@@ -13,7 +13,7 @@ function requestFlights(airport, date, daysAtDestination, adults, children) {
 	}
 }
 
-function receiveFlights(airport, date, daysAtDestination, adults, children, json) {
+export function receiveFlights(airport, date, daysAtDestination, adults, children, json) {
 	return {
 		type: types.RECEIVE_FLIGHTS,
 		airport,

@@ -14,7 +14,7 @@ describe('airports reducer', () => {
 			}
 		])
 	})
-
+/*
 	it('should return the RECEIVE_AIRPORT state', () => {
 		const locations = [{
 			  "id": "ACE",
@@ -43,4 +43,5 @@ describe('airports reducer', () => {
 			}
 		])
 	})
+	*/
 })

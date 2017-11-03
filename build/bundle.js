@@ -12762,6 +12762,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 var REQUEST_FLIGHTS = exports.REQUEST_FLIGHTS = 'REQUEST_FLIGHTS';
 var RECEIVE_FLIGHTS = exports.RECEIVE_FLIGHTS = 'RECEIVE_FLIGHTS';
+var NO_FLIGHTS = exports.NO_FLIGHTS = 'NO_FLIGHTS';
+var RESULT_FLIGHTS = exports.RESULT_FLIGHTS = 'RESULT_FLIGHTS';
 
 /***/ }),
 /* 291 */
@@ -53816,6 +53818,8 @@ var types = _interopRequireWildcard(_Flights);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function flightsByDate() {
@@ -53839,19 +53843,30 @@ function flightsByDate() {
 				flightOffers: action.flights,
 				lastUpdated: action.receivedAt
 			});
+		case types.NO_FLIGHTS:
+			return Object.assign({}, state, {
+				isFetching: false,
+				didInvalidate: false,
+				lastUpdated: action.receivedAt
+			});
 		default:
 			return state;
 	}
 }
 
 var flights = function flights() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { result: [] };
 	var action = arguments[1];
 
 	switch (action.type) {
 		case types.RECEIVE_FLIGHTS:
 		case types.REQUEST_FLIGHTS:
+		case types.NO_FLIGHTS:
 			return Object.assign({}, state, _defineProperty({}, action.date, flightsByDate(state[action.date], action)));
+		case types.RESULT_FLIGHTS:
+			return Object.assign({}, state, {
+				result: [].concat(_toConsumableArray(state.result), _toConsumableArray(action.result))
+			});
 		default:
 			return state;
 	}
@@ -73173,6 +73188,7 @@ var DropdownField = function DropdownField(props) {
 };
 
 var InputField = function InputField(props) {
+	/*		console.log(props)*/
 	return _jsx(_semanticUiReact.Form.Input, {
 		value: props.input.value,
 		type: props.type,
@@ -73852,9 +73868,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 exports.APIKEY = undefined;
-exports.requestFlights = requestFlights;
-exports.receiveFlights = receiveFlights;
 exports.fetchFlights = fetchFlights;
+exports.rateFlights = rateFlights;
 
 var _isomorphicFetch = __webpack_require__(462);
 
@@ -73870,22 +73885,38 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var APIKEY = exports.APIKEY = 'A0cvrUD3FvGNbSWJpxAdAkDPVsWBZm5w';
 
-function requestFlights(airport, date, daysAtDestination) {
+function requestFlights(airport, date, daysAtDestination, adults, children) {
 	return {
 		type: types.REQUEST_FLIGHTS,
 		airport: airport,
 		date: date,
-		daysAtDestination: daysAtDestination
+		daysAtDestination: daysAtDestination,
+		adults: adults,
+		children: children
 	};
 }
 
-function receiveFlights(airport, date, daysAtDestination, json) {
+function receiveFlights(airport, date, daysAtDestination, adults, children, json) {
 	return {
 		type: types.RECEIVE_FLIGHTS,
 		airport: airport,
 		date: date,
 		daysAtDestination: daysAtDestination,
+		adults: adults,
+		children: children,
 		flights: json.flightOffer,
+		receivedAt: Date.now()
+	};
+}
+
+function noFlights(airport, date, daysAtDestination, adults, children) {
+	return {
+		type: types.NO_FLIGHTS,
+		airport: airport,
+		date: date,
+		daysAtDestination: daysAtDestination,
+		adults: adults,
+		children: children,
 		receivedAt: Date.now()
 	};
 }
@@ -73897,6 +73928,7 @@ function fetchFlights(data) {
 		var airport = data.airportField;
 		var periodStartDate = new Date(data.periodStartDate);
 		var periodEndDate = new Date(data.periodEndDate);
+		var flightDuration = data.flightDuration;
 		var daysAtDestination = data.daysAtDestination;
 		var lastPossibleDay = new Date(periodEndDate).setDate(periodEndDate.getDate() - daysAtDestination);
 		var adults = data.adults;
@@ -73909,7 +73941,7 @@ function fetchFlights(data) {
 			day = (day < 10 ? '0' : '') + day;
 			var date = "" + currentDay.getFullYear() + month + day;
 
-			dispatch(requestFlights(airport, date, daysAtDestination));
+			dispatch(requestFlights(airport, date, daysAtDestination, adults, children));
 
 			var request = new Request(ENDPOINT + ('?\n\t\t\t\tOrigin=' + airport + '&\n\t\t\t\tOriginDepartureDate=' + date + '&\n\t\t\t\tDaysAtDestination=' + daysAtDestination + '&\n\t\t\t\tAdults=' + adults + '&\n\t\t\t\tChildren=' + children), {
 				headers: new Headers({
@@ -73920,7 +73952,12 @@ function fetchFlights(data) {
 			(0, _isomorphicFetch2.default)(request).then(function (res) {
 				return res.json();
 			}).then(function (json) {
-				return dispatch(receiveFlights(airport, date, daysAtDestination, json));
+				return dispatch(receiveFlights(airport, date, daysAtDestination, adults, children, json));
+			}).then(function (data) {
+				return dispatch(rateFlights(data.flights, flightDuration));
+			}).catch(function (error) {
+				/*	console.log('Request failed', error)*/
+				dispatch(noFlights(airport, date, daysAtDestination, adults, children));
 			});
 		};
 
@@ -73928,6 +73965,61 @@ function fetchFlights(data) {
 			_loop();
 		}
 	};
+}
+
+function rateFlights(data, flightDuration) {
+	data.map(function (offer) {
+
+		//		console.log(offer)
+
+		var score = 0;
+		score += getScoreForFlightDuration(offer, flightDuration);
+		//		console.log(score)
+
+		score += getScoreForArrivalTime(offer);
+		//		console.log(score)
+
+		score += getScoreForDepartureTime(offer);
+		//		console.log(score)
+
+		offer.score = score;
+	});
+
+	//	console.log(data)
+	return {
+		type: types.RESULT_FLIGHTS,
+		result: data
+	};
+}
+
+function getScoreForFlightDuration(offer, flightDuration) {
+	flightDuration = flightDuration * 3600 * 1000;
+	return Math.abs(flightDuration - maxFlightDuration(offer)) / 10000;
+}
+
+function maxFlightDuration(offer) {
+	var inboundFlightDuration = calculateFlightDuration(offer.inboundFlight.departureDateTime, offer.inboundFlight.arrivalDateTime);
+	var outboundFlightDuration = calculateFlightDuration(offer.outboundFlight.departureDateTime, offer.outboundFlight.arrivalDateTime);
+
+	return Math.max(inboundFlightDuration, outboundFlightDuration);
+}
+
+function calculateFlightDuration(departureTime, arrivalTime) {
+	return new Date(arrivalTime) - new Date(departureTime);
+}
+
+function getScoreForArrivalTime(offer) {
+	var arrivalTime = new Date(offer.outboundFlight.arrivalDateTime);
+	var timestamp = arrivalTime.getHours() * 60 + arrivalTime.getMinutes();
+	// timestamp 600 = 10.00 s'ochtend
+	return Math.abs(timestamp - 600);
+}
+
+function getScoreForDepartureTime(offer) {
+	var departureTime = new Date(offer.inboundFlight.departureDateTime);
+	var timestamp = departureTime.getHours() * 60 + departureTime.getMinutes();
+	// timestamp 1320 = 22.00 s'avonds
+	return Math.abs(timestamp - 1320);
 }
 
 /***/ }),
@@ -74000,32 +74092,27 @@ var ResultPage = function (_Component) {
 			    flights = _props.flights;
 
 
-			return _jsx('div', {}, void 0, _jsx(_semanticUiReact.Transition.Group, {}, void 0, Object.keys(flights).map(function (item) {
-				var data = flights[item];
+			return _jsx('div', {}, void 0, _jsx(_semanticUiReact.Transition.Group, {}, void 0, flights.result.sort(function (a, b) {
+				return a.score - b.score;
+			}).map(function (offer, index) {
+				var from = _this2.getAirport(offer.outboundFlight.departureAirport.locationCode);
+				var to = _this2.getAirport(offer.outboundFlight.arrivalAirport.locationCode);
 
-				if (data.lastUpdated && !data.isFetching) {
-					return data.flightOffers.map(function (offer, index) {
-
-						var from = _this2.getAirport(offer.outboundFlight.departureAirport.locationCode);
-						var to = _this2.getAirport(offer.outboundFlight.arrivalAirport.locationCode);
-
-						return _jsx(_semanticUiReact.Segment, {
-							clearing: true,
-							padded: true
-						}, void 0, _jsx(_semanticUiReact.Label, {
-							attached: 'top',
-							size: 'big',
-							color: 'pink'
-						}, void 0, from.name, ' (', from.country.name, ') ', _ref, ' ', to.name, ' (', to.country.name, ')'), _jsx(_FlightOffer2.default, {
-							flightOffer: offer
-						}), _jsx(_semanticUiReact.Button, {
-							as: 'a',
-							href: offer.deeplink.href,
-							floated: 'right',
-							positive: true
-						}, void 0, 'Book now!'));
-					});
-				}
+				return _jsx(_semanticUiReact.Segment, {
+					clearing: true,
+					padded: true
+				}, void 0, _jsx(_semanticUiReact.Label, {
+					attached: 'top',
+					size: 'big',
+					color: 'pink'
+				}, void 0, from.name, ' (', from.country.name, ') ', _ref, ' ', to.name, ' (', to.country.name, ')'), _jsx(_FlightOffer2.default, {
+					flightOffer: offer
+				}), _jsx(_semanticUiReact.Button, {
+					as: 'a',
+					href: offer.deeplink.href,
+					floated: 'right',
+					positive: true
+				}, void 0, 'Book now!'));
 			})));
 		}
 	}]);
@@ -74078,16 +74165,16 @@ var _ref2 = _jsx(_semanticUiReact.Icon, {
 var FlightOffer = function FlightOffer(_ref) {
 	var flightOffer = _ref.flightOffer;
 	return _jsx('div', {}, void 0, _jsx(_Flight2.default, {
-		data: flightOffer.inboundFlight,
-		type: 'inboundFlight'
-	}), _jsx(_Flight2.default, {
 		data: flightOffer.outboundFlight,
 		type: 'outboundFlight'
+	}), _jsx(_Flight2.default, {
+		data: flightOffer.inboundFlight,
+		type: 'inboundFlight'
 	}), _jsx(_semanticUiReact.Segment, {
 		attached: 'bottom',
 		size: 'massive',
 		textAlign: 'right'
-	}, void 0, _ref2, flightOffer.pricingInfoSum.totalPriceOnePassenger));
+	}, void 0, _ref2, flightOffer.pricingInfoSum.totalPriceOnePassenger, ' / ', flightOffer.pricingInfoSum.totalPriceAllPassengers));
 };
 
 exports.default = FlightOffer;
@@ -74123,15 +74210,15 @@ var Flight = function Flight(_ref) {
 	return _jsx('div', {}, void 0, _jsx(_semanticUiReact.Header, {
 		as: 'h5',
 		attached: 'top'
-	}, void 0, _jsx('p', {}, void 0, 'ID: ', data.id), _jsx('p', {}, void 0, 'FlightNumber: ', data.flightNumber)), _jsx(_semanticUiReact.Segment, {
+	}, void 0, 'FlightNumber: ', data.flightNumber), _jsx(_semanticUiReact.Segment, {
 		attached: true
 	}, void 0, _jsx(_semanticUiReact.Grid, {
 		columns: 2
-	}, void 0, _jsx(_semanticUiReact.Grid.Column, {}, void 0, _jsx('p', {}, void 0, data.departureAirport.locationCode), _jsx('p', {}, void 0, data.departureDateTime)), _jsx(_semanticUiReact.Grid.Column, {}, void 0, _jsx('p', {}, void 0, data.arrivalAirport.locationCode), _jsx('p', {}, void 0, data.arrivalDateTime)))), _jsx(_semanticUiReact.Segment, {
+	}, void 0, _jsx(_semanticUiReact.Grid.Column, {}, void 0, _jsx('p', {}, void 0, data.departureAirport.locationCode), _jsx('p', {}, void 0, new Date(data.departureDateTime).toDateString()), _jsx('p', {}, void 0, new Date(data.departureDateTime).toTimeString())), _jsx(_semanticUiReact.Grid.Column, {}, void 0, _jsx('p', {}, void 0, data.arrivalAirport.locationCode), _jsx('p', {}, void 0, new Date(data.arrivalDateTime).toDateString()), _jsx('p', {}, void 0, new Date(data.arrivalDateTime).toTimeString())))), _jsx(_semanticUiReact.Segment, {
 		attached: 'bottom',
 		textAlign: 'right',
 		size: 'large'
-	}, void 0, _ref2, ' ', data.pricingInfo.totalPriceOnePassenger));
+	}, void 0, _ref2, ' ', data.pricingInfo.totalPriceOnePassenger, ' / ', data.pricingInfo.totalPriceAllPassengers));
 };
 
 exports.default = Flight;

@@ -16,16 +16,19 @@ const DropdownField = props => (
 	/>
 )
 
-const InputField = props => (
-	<Form.Input
-		value={props.input.value}
-		type={props.type}
-		placeholder={props.placeholder}
-		label={props.label}
-		icon={props.icon}
-		onChange={(param, data) => props.input.onChange(data.value)}
-	/>
-)
+const InputField = (props) => {
+/*		console.log(props)*/
+		return (
+			<Form.Input
+				value={props.input.value}
+				type={props.type}
+				placeholder={props.placeholder}
+				label={props.label}
+				icon={props.icon}
+				onChange={(param, data) => props.input.onChange(data.value)}
+			/>
+		)
+}
 
 const required = value => value ? undefined : 'Required'
 

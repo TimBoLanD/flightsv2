@@ -4,23 +4,24 @@ import { Grid, Header, Icon, Label, Message, Segment } from 'semantic-ui-react'
 const Flight = ({data, type}) => (
 	<div>
 		<Header as='h5' attached='top'>
-			<p>ID: {data.id}</p>
-			<p>FlightNumber: {data.flightNumber}</p>
+			FlightNumber: {data.flightNumber}
 		</Header>
 		<Segment attached>
 			<Grid columns={2}>
 				<Grid.Column>
 					<p>{data.departureAirport.locationCode}</p>
-					<p>{data.departureDateTime}</p>
+					<p>{new Date(data.departureDateTime).toDateString()}</p>
+					<p>{new Date(data.departureDateTime).toTimeString()}</p>
 				</Grid.Column>
 				<Grid.Column>
 					<p>{data.arrivalAirport.locationCode}</p>
-					<p>{data.arrivalDateTime}</p>
+					<p>{new Date(data.arrivalDateTime).toDateString()}</p>
+					<p>{new Date(data.arrivalDateTime).toTimeString()}</p>
 				</Grid.Column>
 			</Grid>
 		</Segment>
 		<Segment attached='bottom' textAlign='right' size='large'>
-			<Icon name='euro' /> {data.pricingInfo.totalPriceOnePassenger}
+			<Icon name='euro' /> {data.pricingInfo.totalPriceOnePassenger} / {data.pricingInfo.totalPriceAllPassengers}
 		</Segment>
 	</div>
 )
